@@ -240,7 +240,7 @@ export default function RRGChart() {
 
   // NEW: load raw-data.json, but keep RAW_DATA as fallback
   useEffect(() => {
-    fetch("/raw-data.json")
+    fetch(`${import.meta.env.BASE_URL}raw-data.json`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
