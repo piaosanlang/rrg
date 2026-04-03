@@ -1,28 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
-
 const BENCHMARK = "SPY";
-
-// Tweakable settings for the closest public approximation
-const RS_EMA_PERIOD = 10;
-const MOM_EMA_PERIOD = 5;
-const NORM_WINDOW = 39;
 const TAIL_LENGTH = 12;
-const ZSCORE_SCALE = 6;
-
-const SECTORS = [
-  { ticker: "XLK", name: "Technology", color: "#00d4ff" },
-  { ticker: "XLF", name: "Financials", color: "#f59e0b" },
-  { ticker: "XLV", name: "Health Care", color: "#10b981" },
-  { ticker: "XLE", name: "Energy", color: "#f97316" },
-  { ticker: "XLI", name: "Industrials", color: "#8b5cf6" },
-  { ticker: "XLY", name: "Cons. Discret.", color: "#ec4899" },
-  { ticker: "XLP", name: "Cons. Staples", color: "#06b6d4" },
-  { ticker: "XLU", name: "Utilities", color: "#84cc16" },
-  { ticker: "XLRE", name: "Real Estate", color: "#f43f5e" },
-  { ticker: "XLB", name: "Materials", color: "#a78bfa" },
-  { ticker: "XLC", name: "Comm. Services", color: "#fb923c" },
-];
 
 const QUADRANT_COLORS = {
   Leading: "#10b981",
@@ -36,124 +15,6 @@ function getQuadrant(rs: number, mom: number) {
   if (rs >= 100 && mom < 100) return "Weakening";
   if (rs < 100 && mom < 100) return "Lagging";
   return "Improving";
-}
-
-// ── Math helpers ────────────────────────────────────────────────
-function ema(values: number[], period: number) {
-  if (!values.length) return [];
-  const k = 2 / (period + 1);
-  const out = [values[0]];
-  for (let i = 1; i < values.length; i++) {
-    out.push(values[i] * k + out[i - 1] * (1 - k));
-  }
-  return out;
-}
-
-function pctChange(values: number[], lookback = 1) {
-  const out = [];
-  for (let i = 0; i < values.length; i++) {
-    if (i < lookback || values[i - lookback] === 0 || values[i - lookback] == null) {
-      out.push(0);
-    } else {
-      out.push(((values[i] / values[i - lookback]) - 1) * 100);
-    }
-  }
-  return out;
-}
-
-function rollingMean(values: number[], endIdx: number, window: number) {
-  const start = Math.max(0, endIdx - window + 1);
-  let sum = 0;
-  let count = 0;
-  for (let i = start; i <= endIdx; i++) {
-    const v = values[i];
-    if (Number.isFinite(v)) {
-      sum += v;
-      count++;
-    }
-  }
-  return count ? sum / count : 0;
-}
-
-function rollingStd(values: number[], endIdx: number, window: number, mean: number) {
-  const start = Math.max(0, endIdx - window + 1);
-  let sumSq = 0;
-  let count = 0;
-  for (let i = start; i <= endIdx; i++) {
-    const v = values[i];
-    if (Number.isFinite(v)) {
-      const d = v - mean;
-      sumSq += d * d;
-      count++;
-    }
-  }
-  if (count < 2) return 1e-9;
-  return Math.sqrt(sumSq / count) || 1e-9;
-}
-
-function rollingNormalizeTo100(values: number[], window = 26, scale = 8) {
-  return values.map((v, i) => {
-    const mean = rollingMean(values, i, window);
-    const std = rollingStd(values, i, window, mean);
-    const z = (v - mean) / std;
-    return 100 + z * scale;
-  });
-}
-
-// ── RRG math ────────────────────────────────────────────────────
-function computeRRG(rawData: any) {
-  const universe = [BENCHMARK, ...SECTORS.map((s) => s.ticker)];
-  const dateSets = universe.map((t) => new Set(Object.keys(rawData[t] || {})));
-  const commonDates = [...dateSets[0]].filter((d) => dateSets.every((s) => s.has(d))).sort();
-
-  const benchmarkPrices = commonDates.map((d) => rawData[BENCHMARK][d]);
-
-  return SECTORS.map((sec) => {
-    const secPrices = commonDates.map((d) => rawData[sec.ticker][d]);
-
-    const rawRS = secPrices.map((p, i) => {
-      const b = benchmarkPrices[i];
-      if (!Number.isFinite(p) || !Number.isFinite(b) || b === 0) return null;
-      return p / b;
-    });
-
-    const cleanedRawRS = rawRS.map((v, i, arr) => {
-      if (Number.isFinite(v)) return v as number;
-      for (let j = i - 1; j >= 0; j--) {
-        if (Number.isFinite(arr[j])) return arr[j] as number;
-      }
-      for (let j = i + 1; j < arr.length; j++) {
-        if (Number.isFinite(arr[j])) return arr[j] as number;
-      }
-      return 1;
-    });
-
-    const rsTrendRaw = ema(cleanedRawRS, RS_EMA_PERIOD);
-    const rsRatio = rollingNormalizeTo100(rsTrendRaw, NORM_WINDOW, ZSCORE_SCALE);
-
-    const rsMomentumInput = pctChange(rsTrendRaw, 1);
-    const rsMomentumSmoothed = ema(rsMomentumInput, MOM_EMA_PERIOD);
-    const rsMomentum = rollingNormalizeTo100(rsMomentumSmoothed, NORM_WINDOW, ZSCORE_SCALE);
-
-    const start = Math.max(0, commonDates.length - TAIL_LENGTH);
-    const trail = [];
-    for (let i = start; i < commonDates.length; i++) {
-      trail.push({
-        date: commonDates[i],
-        rs: +rsRatio[i].toFixed(3),
-        mom: +rsMomentum[i].toFixed(3),
-      });
-    }
-
-    const current = trail[trail.length - 1];
-    return {
-      ...sec,
-      rs: current.rs,
-      mom: current.mom,
-      trail,
-      dates: commonDates,
-    };
-  });
 }
 
 // ── Canvas helpers ──────────────────────────────────────────────
@@ -204,9 +65,7 @@ function roundRect(
 export default function RRGChart() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // NEW: rawData state with fallback to embedded RAW_DATA
-  const [rawData, setRawData] = useState<any>(null);
-
+  const [rawData, setRawData] = useState<any[] | null>(null);
   const [data, setData] = useState<any[] | null>(null);
   const [hovered, setHovered] = useState<number | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
@@ -238,9 +97,8 @@ export default function RRGChart() {
     [axisRange, CH]
   );
 
-  // NEW: load raw-data.json, but keep RAW_DATA as fallback
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}raw-data.json`)
+    fetch(`${import.meta.env.BASE_URL}rrg-data.json`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -249,19 +107,17 @@ export default function RRGChart() {
         setRawData(json);
       })
       .catch((err) => {
-        console.error("Failed to load raw-data.json.", err);
+        console.error("Failed to load rrg-data.json.", err);
       });
   }, []);
 
-  // UPDATED: compute from rawData instead of RAW_DATA
   useEffect(() => {
     if (!rawData) return;
 
-    const computed = computeRRG(rawData);
-    setData(computed);
+    setData(rawData);
 
-    const allRS = computed.flatMap((d) => d.trail.map((p: any) => p.rs));
-    const allMom = computed.flatMap((d) => d.trail.map((p: any) => p.mom));
+    const allRS = rawData.flatMap((d: any) => d.trail.map((p: any) => p.rs));
+    const allMom = rawData.flatMap((d: any) => d.trail.map((p: any) => p.mom));
 
     const pad = 2.0;
     setAxisRange({
@@ -271,8 +127,9 @@ export default function RRGChart() {
       maxMom: Math.ceil(Math.max(...allMom) + pad),
     });
 
-    setAnimFrame(TAIL_LENGTH - 1);
-    frameRef.current = TAIL_LENGTH - 1;
+    const tailLen = rawData[0]?.trail?.length ?? TAIL_LENGTH;
+    setAnimFrame(tailLen - 1);
+    frameRef.current = tailLen - 1;
   }, [rawData]);
 
   useEffect(() => {
@@ -645,7 +502,7 @@ export default function RRGChart() {
                 letterSpacing: "0.05em",
               }}
             >
-              BENCHMARK: {BENCHMARK} · WEEKLY · CLOSER PUBLIC JDK-STYLE APPROXIMATION
+              BENCHMARK: {BENCHMARK} · WEEKLY · PYTHON-COMPUTED JDK-STYLE APPROXIMATION
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
@@ -704,7 +561,7 @@ export default function RRGChart() {
               letterSpacing: "0.1em",
             }}
           >
-            <span style={{ animation: "pulse 1s infinite" }}>COMPUTING RS VALUES...</span>
+            <span style={{ animation: "pulse 1s infinite" }}>LOADING RRG DATA...</span>
           </div>
         )}
 
@@ -862,14 +719,15 @@ export default function RRGChart() {
         }}
       >
         <span style={{ color: "rgba(0,212,255,0.6)", fontWeight: "bold" }}>WEEKLY DATA · </span>
-        rolling-normalized JdK-style approximation using Yahoo Finance weekly closes. Tail = last{" "}
-        {TAIL_LENGTH} weeks · <strong style={{ color: "rgba(255,255,255,0.45)" }}>dim→bright = old→recent</strong>{" "}
-        · arrowhead = direction of travel.{" "}
+        Python-computed JdK-style approximation using Yahoo Finance daily closes aggregated into weekly closes.
+        Tail = dynamic current week + last completed weeks ·{" "}
+        <strong style={{ color: "rgba(255,255,255,0.45)" }}>dim→bright = old→recent</strong> ·
+        arrowhead = direction of travel.{" "}
         <span style={{ color: "#10b981" }}>Leading</span> + arrow ↙ = rotating toward Weakening.{" "}
-        <span style={{ color: "#8b5cf6" }}>Improving</span> + arrow ↗ = rotating toward Leading. Drag slider or hit{" "}
-        <span style={{ color: "#00d4ff" }}>▶ ANIMATE</span> to replay.
+        <span style={{ color: "#8b5cf6" }}>Improving</span> + arrow ↗ = rotating toward Leading.
+        Drag slider or hit <span style={{ color: "#00d4ff" }}>▶ ANIMATE</span> to replay.
         <div style={{ marginTop: 6, color: "rgba(255,255,255,0.22)" }}>
-        Data source: <code>raw-data.json</code> .
+          Data source: <code>rrg-data.json</code>
         </div>
       </div>
 
