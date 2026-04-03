@@ -3,7 +3,7 @@ import json
 import pandas as pd
 from pathlib import Path
 
-from scripts.rrg_math import compute_rrg
+from rrg_math import compute_rrg
 
 TICKERS = [
     "SPY", "XLK", "XLF", "XLV", "XLE",
