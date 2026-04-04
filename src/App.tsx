@@ -726,9 +726,6 @@ export default function RRGChart() {
         <span style={{ color: "#10b981" }}>Leading</span> + arrow ↙ = rotating toward Weakening.{" "}
         <span style={{ color: "#8b5cf6" }}>Improving</span> + arrow ↗ = rotating toward Leading.
         Drag slider or hit <span style={{ color: "#00d4ff" }}>▶ ANIMATE</span> to replay.
-        <div style={{ marginTop: 6, color: "rgba(255,255,255,0.22)" }}>
-          Data source: <code>rrg-data.json</code>
-        </div>
       </div>
 
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
