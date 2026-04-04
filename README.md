@@ -1,73 +1,157 @@
-# React + TypeScript + Vite
+# 📊 Relative Rotation Graph (RRG) – Automated Sector Rotation Tool
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is a **fully automated Relative Rotation Graph (RRG)** built to track **sector rotation in the US equity market** using a Python data pipeline and a lightweight web app.
 
-Currently, two official plugins are available:
+It provides a **daily-updated visual of sector strength and momentum**, helping identify where capital is flowing — and where it’s going next.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+# 🚀 What This Does
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+This system automatically:
 
-## Expanding the ESLint configuration
+1. Pulls market data (daily)
+2. Computes Relative Strength (RS) and Momentum
+3. Builds RRG-compatible data
+4. Updates JSON data files
+5. Rebuilds the frontend app
+6. Deploys to GitHub Pages
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+👉 No manual work required.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# 🔁 Automation Flow
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### ⏰ Runs automatically every weekday:
+- **Time:** 4:15 PM PST (after market close)
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### ⚙️ Pipeline:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Python (yfinance)
+↓
+Generate RS + Momentum
+↓
+Update JSON files
+↓
+Commit to repo
+↓
+Build frontend (Vite)
+↓
+Deploy via GitHub Pages
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+
+---
+
+# 📁 Key Files
+
+### Data
+- `public/raw-data.json` → Raw price data
+- `public/rrg-data.json` → Processed RRG data (used by app)
+
+### Script
+- `scripts/update_rrg.py` → Fetches data + computes RS/Momentum
+
+### Frontend
+- Built using Vite
+- Outputs to `/dist` for deployment
+
+### Workflow
+- `.github/workflows/update-data.yml`
+  - Handles data update + build + deploy
+
+---
+
+# 🌐 Live App
+
+👉 https://friedjalapeno.github.io/rrg/
+
+---
+
+# 📈 What the Chart Shows
+
+Each sector ETF (SPDR):
+
+- XLK – Technology  
+- XLF – Financials  
+- XLE – Energy  
+- XLI – Industrials  
+- XLB – Materials  
+- XLU – Utilities  
+- XLP – Staples  
+- XLY – Discretionary  
+- XLV – Healthcare  
+- XLRE – Real Estate  
+- XLC – Communication  
+
+---
+
+# 🧭 Quadrants Explained
+
+| Quadrant     | Meaning |
+|--------------|--------|
+| 🟢 Leading    | Strong RS + rising momentum |
+| 🟡 Weakening  | Strong RS, but losing momentum |
+| 🔴 Lagging    | Weak RS + weak momentum |
+| 🔵 Improving  | Weak RS, but gaining momentum |
+
+---
+
+# 🧠 How to Use This
+
+This tool is designed for **top-down analysis**:
+
+### Step 1: Identify sector rotation
+- Watch sectors moving from:
+  - **Improving → Leading**
+
+### Step 2: Focus your trades
+- Only scan stocks inside:
+  - Leading sectors
+  - Improving sectors (early moves)
+
+### Step 3: Execute using your strategy
+- Supply/Demand
+- Structure
+- Momentum confirmation
+
+---
+
+# ⚠️ Notes
+
+- Data is based on **weekly aggregation**
+- Updated once per trading day
+- Uses `yfinance` (subject to occasional API hiccups)
+- If a workflow fails, last successful data remains live
+
+---
+
+# 🛠️ Tech Stack
+
+- Python (yfinance, pandas)
+- GitHub Actions (automation)
+- Vite (frontend build)
+- GitHub Pages (hosting)
+
+---
+
+# 🔮 Future Improvements
+
+- Alerts for quadrant transitions
+- Sector ranking / scoring
+- Stock-level scanner integration
+- Momentum velocity tracking
+- Intraday update option
+
+---
+
+# 💡 Why This Matters
+
+Most traders react to price.
+
+This tool helps you:
+
+👉 Track **where money is rotating BEFORE the move fully develops**
+
+It’s not about predicting —  
+it’s about positioning early.
