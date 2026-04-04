@@ -155,3 +155,15 @@ This tool helps you:
 
 It’s not about predicting —  
 it’s about positioning early.
+
+---
+
+# ⚠️ Disclaimer
+
+This project is for **educational and informational purposes only**.
+
+It does not constitute financial advice, investment recommendations, or a solicitation to buy or sell any securities.
+
+All market data is sourced from third-party providers and may be delayed or inaccurate. Always do your own research and consult with a qualified financial professional before making investment decisions.
+
+Use at your own risk.
