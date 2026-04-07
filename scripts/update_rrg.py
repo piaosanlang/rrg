@@ -2,61 +2,127 @@ import yfinance as yf
 import json
 import pandas as pd
 from pathlib import Path
+from rrg_math import compute_rrg, SECTOR_HOLDINGS
 
-from rrg_math import compute_rrg
+# ── Ticker universe ──────────────────────────────────────────────
 
-TICKERS = [
+SECTOR_TICKERS = [
     "SPY", "XLK", "XLF", "XLV", "XLE",
-    "XLI", "XLY", "XLP", "XLU", "XLRE", "XLB", "XLC"
+    "XLI", "XLY", "XLP", "XLU", "XLRE", "XLB", "XLC",
 ]
 
+# Build full list of individual holding tickers (deduplicated)
+HOLDING_TICKERS = list({
+    h["ticker"]
+    for holdings in SECTOR_HOLDINGS.values()
+    for h in holdings
+})
 
-def fetch_weekly_from_daily():
+ALL_TICKERS = list(set(SECTOR_TICKERS + HOLDING_TICKERS))
+
+
+# ── Data fetch ───────────────────────────────────────────────────
+
+def fetch_weekly_from_daily() -> dict:
+    """
+    Download daily price data for all tickers from 2024-01-01
+    and aggregate to weekly closes (last trading day of each week).
+    Returns dict of ticker -> {date_str -> close_price}.
+    """
     data = {}
+    total = len(ALL_TICKERS)
 
-    for ticker in TICKERS:
-        df = yf.download(
-            ticker,
-            period="2y",
-            interval="1d",
-            auto_adjust=True,
-            progress=False
-        )
+    for idx, ticker in enumerate(ALL_TICKERS, 1):
+        try:
+            df = yf.download(
+                ticker,
+                start="2024-01-01",
+                interval="1d",
+                auto_adjust=True,
+                progress=False,
+            )
 
-        df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
-        df = df[["Close"]].dropna().copy()
-        df.index = pd.to_datetime(df.index)
+            # Flatten multi-level columns if present
+            df.columns = [
+                col[0] if isinstance(col, tuple) else col
+                for col in df.columns
+            ]
 
-        df["week"] = df.index.to_period("W-FRI")
+            df = df[["Close"]].dropna().copy()
+            df.index = pd.to_datetime(df.index)
+            df["week"] = df.index.to_period("W-FRI")
 
-        weekly_data = {}
+            weekly_data = {}
+            for _, group in df.groupby("week"):
+                last_trading_day = group.index.max()
+                last_close = group["Close"].iloc[-1]
+                weekly_data[
+                    last_trading_day.strftime("%Y-%m-%d")
+                ] = round(float(last_close), 2)
 
-        for _, group in df.groupby("week"):
-            last_trading_day = group.index.max()
-            last_close = group["Close"].iloc[-1]
-            weekly_data[last_trading_day.strftime("%Y-%m-%d")] = round(float(last_close), 2)
+            data[ticker] = weekly_data
+            print(f"  [{idx}/{total}] ✓ {ticker}")
 
-        data[ticker] = weekly_data
+        except Exception as e:
+            print(f"  [{idx}/{total}] ✗ {ticker} — {e}")
 
     return data
 
 
+# ── Main ─────────────────────────────────────────────────────────
+
 def main():
+    print("=" * 50)
+    print("Fetching price data...")
+    print("=" * 50)
     raw_data = fetch_weekly_from_daily()
-    rrg_data = compute_rrg(raw_data)
 
     public_dir = Path("public")
-    raw_output = public_dir / "raw-data.json"
-    rrg_output = public_dir / "rrg-data.json"
+    public_dir.mkdir(exist_ok=True)
 
-    with open(raw_output, "w") as f:
+    # ── Main sector RRG ──────────────────────────────
+    print("\nComputing main sector RRG...")
+    rrg_data = compute_rrg(raw_data)
+
+    with open(public_dir / "raw-data.json", "w") as f:
         json.dump(raw_data, f, indent=2)
+    print("  ✓ public/raw-data.json")
 
-    with open(rrg_output, "w") as f:
+    with open(public_dir / "rrg-data.json", "w") as f:
         json.dump(rrg_data, f, indent=2)
+    print("  ✓ public/rrg-data.json")
 
-    print("Updated public/raw-data.json")
-    print("Updated public/rrg-data.json")
+    # ── Drill-down RRGs ──────────────────────────────
+    print("\nComputing drill-down RRGs...")
+    success = 0
+    failed = 0
+
+    for sector_ticker, holdings in SECTOR_HOLDINGS.items():
+        try:
+            drilldown_data = compute_rrg(
+                raw_data,
+                benchmark=sector_ticker,
+                sectors=holdings,
+            )
+
+            filename = public_dir / f"rrg-{sector_ticker.lower()}.json"
+            with open(filename, "w") as f:
+                json.dump(drilldown_data, f, indent=2)
+
+            print(f"  ✓ {filename}")
+            success += 1
+
+        except Exception as e:
+            print(f"  ✗ {sector_ticker} drill-down failed — {e}")
+            failed += 1
+
+    # ── Summary ──────────────────────────────────────
+    print("\n" + "=" * 50)
+    print(f"Done.")
+    print(f"  Main RRG:       ✓")
+    print(f"  Drill-downs:    {success} succeeded, {failed} failed")
+    print(f"  Total tickers:  {len(ALL_TICKERS)}")
+    print("=" * 50)
 
 
 if __name__ == "__main__":
