@@ -1,65 +1,51 @@
 name: Update RRG Data
-
 on:
   workflow_dispatch:
   schedule:
     - cron: "15 23 * * 1-5"
-
 permissions:
   contents: write
   pages: write
   id-token: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install Python dependencies
         run: pip install yfinance pandas
-
       - name: Run update script
         run: python scripts/update_rrg.py
-
       - name: Commit updated JSON files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/raw-data.json public/rrg-data.json
+          git add public/raw-data.json public/rrg-data.json public/rrg-xl*.json
           git commit -m "Update RRG data" || echo "No changes to commit"
           git push
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
       - name: Install Node dependencies
         run: npm install
-
       - name: Build site
         run: npm run build
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist
-
   deploy:
     runs-on: ubuntu-latest
     needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
