@@ -22,6 +22,10 @@ SECTORS = [
     {"ticker": "XLRE", "name": "Real Estate",     "color": "#f43f5e"},
     {"ticker": "XLB",  "name": "Materials",       "color": "#a78bfa"},
     {"ticker": "XLC",  "name": "Comm. Services",  "color": "#fb923c"},
+    {"ticker": "HYG",  "name": "Corporate Bond",  "color": "#22c55e"},
+    {"ticker": "TLT",  "name": "Treasury Bond",   "color": "#eab308"},
+    {"ticker": "GLD",  "name": "Gold Trust",      "color": "#14b8a6"},
+
 ]
 
 SECTOR_HOLDINGS: Dict[str, List[Dict[str, str]]] = {
