@@ -9,6 +9,9 @@ from rrg_math import compute_rrg, SECTOR_HOLDINGS
 SECTOR_TICKERS = [
     "SPY", "XLK", "XLF", "XLV", "XLE",
     "XLI", "XLY", "XLP", "XLU", "XLRE", "XLB", "XLC",
+
+    # Macro snitches
+    "HYG", "TLT", "GLD",
 ]
 
 # Build full list of individual holding tickers (deduplicated)
