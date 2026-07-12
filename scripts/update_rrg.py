@@ -1,7 +1,8 @@
-import yfinance as yf
+import akshare as ak
 import json
 import pandas as pd
 from pathlib import Path
+from datetime import datetime
 from rrg_math import compute_rrg, SECTOR_HOLDINGS
 
 # ── Ticker universe ──────────────────────────────────────────────
@@ -32,24 +33,29 @@ def fetch_weekly_from_daily() -> dict:
     and aggregate to weekly closes (last trading day of each week).
     Returns dict of ticker -> {date_str -> close_price}.
     """
+    cache_dir = Path(".cache")
+    cache_dir.mkdir(exist_ok=True)
+    today = datetime.now().strftime("%Y-%m-%d")
+
     data = {}
     total = len(ALL_TICKERS)
 
     for idx, ticker in enumerate(ALL_TICKERS, 1):
-        try:
-            df = yf.download(
-                ticker,
-                start="2024-01-01",
-                interval="1d",
-                auto_adjust=True,
-                progress=False,
-            )
+        cache_file = cache_dir / f"{ticker}_{today}.json"
 
-            # Flatten multi-level columns if present
-            df.columns = [
-                col[0] if isinstance(col, tuple) else col
-                for col in df.columns
-            ]
+        try:
+            if cache_file.exists():
+                with open(cache_file, "r") as f:
+                    data[ticker] = json.load(f)
+                print(f"  [{idx}/{total}] ✓ {ticker} (cached)")
+                continue
+
+            df = ak.stock_us_daily(symbol=ticker, adjust="")
+
+            df["date"] = pd.to_datetime(df["date"])
+            df = df[df["date"] >= "2024-01-01"].copy()
+            df = df.set_index("date")
+            df = df.rename(columns={"close": "Close"})
 
             df = df[["Close"]].dropna().copy()
             df.index = pd.to_datetime(df.index)
@@ -64,6 +70,10 @@ def fetch_weekly_from_daily() -> dict:
                 ] = round(float(last_close), 2)
 
             data[ticker] = weekly_data
+
+            with open(cache_file, "w") as f:
+                json.dump(weekly_data, f, indent=2)
+
             print(f"  [{idx}/{total}] ✓ {ticker}")
 
         except Exception as e:
