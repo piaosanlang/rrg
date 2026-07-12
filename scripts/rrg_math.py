@@ -11,21 +11,20 @@ TAIL_LENGTH = 12
 ZSCORE_SCALE = 6
 
 SECTORS = [
-    {"ticker": "XLK",  "name": "Technology",      "color": "#00d4ff"},
-    {"ticker": "XLF",  "name": "Financials",      "color": "#f59e0b"},
-    {"ticker": "XLV",  "name": "Health Care",     "color": "#10b981"},
-    {"ticker": "XLE",  "name": "Energy",          "color": "#f97316"},
-    {"ticker": "XLI",  "name": "Industrials",     "color": "#8b5cf6"},
-    {"ticker": "XLY",  "name": "Cons. Discret.",  "color": "#ec4899"},
-    {"ticker": "XLP",  "name": "Cons. Staples",   "color": "#06b6d4"},
-    {"ticker": "XLU",  "name": "Utilities",       "color": "#84cc16"},
-    {"ticker": "XLRE", "name": "Real Estate",     "color": "#f43f5e"},
-    {"ticker": "XLB",  "name": "Materials",       "color": "#a78bfa"},
-    {"ticker": "XLC",  "name": "Comm. Services",  "color": "#fb923c"},
-    {"ticker": "HYG",  "name": "Corporate Bond",  "color": "#22c55e"},
-    {"ticker": "TLT",  "name": "Treasury Bond",   "color": "#eab308"},
-    {"ticker": "GLD",  "name": "Gold Trust",      "color": "#14b8a6"},
-
+    {"ticker": "XLK",  "name": "科技",           "color": "#00d4ff"},
+    {"ticker": "XLF",  "name": "金融",           "color": "#f59e0b"},
+    {"ticker": "XLV",  "name": "医疗保健",        "color": "#10b981"},
+    {"ticker": "XLE",  "name": "能源",           "color": "#f97316"},
+    {"ticker": "XLI",  "name": "工业",           "color": "#8b5cf6"},
+    {"ticker": "XLY",  "name": "非必需消费品",     "color": "#ec4899"},
+    {"ticker": "XLP",  "name": "必需消费品",       "color": "#06b6d4"},
+    {"ticker": "XLU",  "name": "公用事业",        "color": "#84cc16"},
+    {"ticker": "XLRE", "name": "房地产",         "color": "#f43f5e"},
+    {"ticker": "XLB",  "name": "材料",           "color": "#a78bfa"},
+    {"ticker": "XLC",  "name": "通信服务",        "color": "#fb923c"},
+    {"ticker": "HYG",  "name": "企业债",         "color": "#22c55e"},
+    {"ticker": "TLT",  "name": "国债",           "color": "#eab308"},
+    {"ticker": "GLD",  "name": "黄金",           "color": "#14b8a6"},
 ]
 
 SECTOR_HOLDINGS: Dict[str, List[Dict[str, str]]] = {
@@ -53,7 +52,7 @@ SECTOR_HOLDINGS: Dict[str, List[Dict[str, str]]] = {
     ],
 
     "XLF": [
-        {"ticker": "BRK-B", "name": "Berkshire",       "color": "#00d4ff"},
+        {"ticker": "BRK.B", "name": "Berkshire",       "color": "#00d4ff"},
         {"ticker": "JPM",   "name": "JPMorgan",        "color": "#f59e0b"},
         {"ticker": "V",     "name": "Visa",            "color": "#10b981"},
         {"ticker": "MA",    "name": "Mastercard",      "color": "#f97316"},
