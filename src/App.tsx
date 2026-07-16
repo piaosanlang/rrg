@@ -75,7 +75,7 @@ export default function RRGChart() {
 
   // ── Interaction state ─────────────────────────────────────────
   const [hovered, setHovered]   = useState<number | null>(null);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number[]>([]);
   const [animFrame, setAnimFrame] = useState(TAIL_LENGTH - 1);
   const [playing, setPlaying]   = useState(false);
   const frameRef = useRef(TAIL_LENGTH - 1);
@@ -147,7 +147,7 @@ export default function RRGChart() {
         setDrilldownData(json);
         setActiveSector(ticker);
         setView("drilldown");
-        setSelected(null);
+        setSelected([]);
         setHovered(null);
         setPlaying(false);
         setAxisRange(computeAxisRange(json));
@@ -163,7 +163,7 @@ export default function RRGChart() {
   const handleBack = useCallback(() => {
     setView("sectors");
     setActiveSector(null);
-    setSelected(null);
+    setSelected([]);
     setHovered(null);
     setPlaying(false);
     if (sectorData) {
@@ -287,7 +287,11 @@ export default function RRGChart() {
 
     // Sector/stock dots and tails
     data.forEach((d, i) => {
-      const isActive = hovered === i || selected === i;
+      // 如果有勾选项，只显示被勾选的；否则显示全部
+      const shouldShow = selected.length === 0 || selected.includes(i);
+      if (!shouldShow) return;
+
+      const isActive = hovered === i || selected.includes(i);
       const visTrail = d.trail.slice(0, Math.min(animFrame + 1, d.trail.length));
       const n = visTrail.length;
       if (n < 1) return;
@@ -340,10 +344,10 @@ export default function RRGChart() {
     });
 
     // ── Tooltip ───────────────────────────────────────────────────
-    // Only show tooltip for selected dot (pinned)
-    const idx = selected !== null ? selected : hovered;
-    if (idx !== null && data[idx]) {
-      const d   = data[idx];
+    // Show tooltip for hovered or any selected dot
+    const tooltipIdx = hovered !== null ? hovered : (selected.length > 0 ? selected[0] : null);
+    if (tooltipIdx !== null && data[tooltipIdx]) {
+      const d   = data[tooltipIdx];
       const cur = d.trail[Math.min(animFrame, d.trail.length - 1)];
       const x   = toX(cur.rs), y = toY(cur.mom);
       const q   = getQuadrant(cur.rs, cur.mom);
@@ -360,7 +364,7 @@ export default function RRGChart() {
 
       // Tooltip shows drill-down link only in sector view
       // and only when the dot is pinned (selected), not just hovered
-      const showDrilldownLink = view === "sectors" && selected === idx;
+      const showDrilldownLink = view === "sectors" && selected.includes(tooltipIdx);
 
       // Height: base 82, +18 for dirText, +20 for drilldown link
       const bh = 82 + (dirText ? 18 : 0) + (showDrilldownLink ? 20 : 0);
@@ -433,8 +437,8 @@ export default function RRGChart() {
       setHovered(closest);
 
       // Update cursor — pointer if hovering over drilldown link area
-      if (canvasRef.current && selected !== null && closest === selected && view === "sectors") {
-        const d   = data[selected];
+      if (canvasRef.current && selected.length > 0 && closest !== null && selected.includes(closest) && view === "sectors") {
+        const d   = data[selected[0]];
         const cur = d.trail[Math.min(animFrame, d.trail.length - 1)];
         const x   = toX(cur.rs), y = toY(cur.mom);
 
@@ -466,8 +470,8 @@ export default function RRGChart() {
 
       // Check if click is on the drill-down link
       // Only active when a dot is already selected (pinned) in sector view
-      if (selected !== null && view === "sectors") {
-        const d   = data[selected];
+      if (selected.length > 0 && view === "sectors") {
+        const d   = data[selected[0]];
         const cur = d.trail[Math.min(animFrame, d.trail.length - 1)];
         const x   = toX(cur.rs), y = toY(cur.mom);
 
@@ -494,7 +498,12 @@ export default function RRGChart() {
         if (dist < minD) { minD = dist; closest = i; }
       });
 
-      setSelected((prev) => (prev === closest ? null : closest));
+      // Toggle selection (checkbox behavior)
+      if (closest !== null) {
+        setSelected((prev) =>
+          prev.includes(closest!) ? prev.filter(i => i !== closest) : [...prev, closest!]
+        );
+      }
     },
     [data, animFrame, toX, toY, selected, view, handleDrilldown, W]
   );
@@ -502,7 +511,12 @@ export default function RRGChart() {
   // ── Derived values ────────────────────────────────────────────
   const quadCounts = data
     ? ["Leading", "Weakening", "Lagging", "Improving"].reduce((acc: any, q) => {
-        acc[q] = data.filter((d: any) => {
+        // 如果有勾选项，只统计被勾选的；否则统计全部
+        const filteredData = selected.length === 0
+          ? data
+          : data.filter((_, i) => selected.includes(i));
+
+        acc[q] = filteredData.filter((d: any) => {
           const cur = d.trail[Math.min(animFrame, d.trail.length - 1)];
           return getQuadrant(cur.rs, cur.mom) === q;
         }).length;
@@ -710,21 +724,69 @@ export default function RRGChart() {
 
       {/* ── Legend grid ──────────────────────────────────────── */}
       {data && (
-        <div style={{
-          width: "100%", maxWidth: 700, marginTop: 10,
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill,minmax(128px,1fr))",
-          gap: 7,
-        }}>
+        <div style={{ width: "95%", maxWidth: 1600, marginTop: 10 }}>
+          {/* 全选/清除按钮 */}
+          <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
+            <button
+              onClick={() => setSelected(data.map((_, i) => i))}
+              style={{
+                background: "rgba(0,150,200,0.15)",
+                border: "1px solid rgba(0,150,200,0.4)",
+                color: "#0096c8",
+                padding: "4px 12px",
+                borderRadius: 4,
+                cursor: "pointer",
+                fontSize: 10,
+                fontWeight: "bold",
+              }}
+            >
+              全选
+            </button>
+            <button
+              onClick={() => setSelected([])}
+              style={{
+                background: "rgba(0,0,0,0.05)",
+                border: "1px solid rgba(0,0,0,0.2)",
+                color: "rgba(0,0,0,0.6)",
+                padding: "4px 12px",
+                borderRadius: 4,
+                cursor: "pointer",
+                fontSize: 10,
+                fontWeight: "bold",
+              }}
+            >
+              清除
+            </button>
+            <div style={{
+              fontSize: 10,
+              color: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              marginLeft: 8,
+            }}>
+              已选择 {selected.length} / {data.length} 个标的
+            </div>
+          </div>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill,minmax(138px,1fr))",
+            gap: 7,
+          }}>
           {data.map((d: any, i: number) => {
             const cur = d.trail[Math.min(animFrame, d.trail.length - 1)];
             const q   = getQuadrant(cur.rs, cur.mom);
-            const active = selected === i || hovered === i;
+            const active = selected.includes(i) || hovered === i;
+            const isChecked = selected.includes(i);
 
             return (
               <div
                 key={d.ticker}
-                onClick={() => setSelected((prev) => (prev === i ? null : i))}
+                onClick={() => {
+                  setSelected((prev) =>
+                    prev.includes(i) ? prev.filter(idx => idx !== i) : [...prev, i]
+                  );
+                }}
                 onMouseEnter={() => setHovered(i)}
                 onMouseLeave={() => setHovered(null)}
                 style={{
@@ -735,11 +797,23 @@ export default function RRGChart() {
                   cursor: "pointer", transition: "all 0.15s",
                 }}
               >
+                {/* Checkbox */}
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => {}}
+                  style={{
+                    width: 16,
+                    height: 16,
+                    cursor: "pointer",
+                    accentColor: d.color,
+                  }}
+                />
                 <div style={{
                   width: 8, height: 8, borderRadius: "50%",
                   background: d.color, flexShrink: 0,
                 }} />
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, fontWeight: "bold", color: d.color }}>
                     {d.ticker}
                   </div>
@@ -750,6 +824,7 @@ export default function RRGChart() {
               </div>
             );
           })}
+          </div>
         </div>
       )}
 
