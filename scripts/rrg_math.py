@@ -25,6 +25,13 @@ SECTORS = [
     {"ticker": "HYG",  "name": "企业债",         "color": "#22c55e"},
     {"ticker": "TLT",  "name": "国债",           "color": "#eab308"},
     {"ticker": "GLD",  "name": "黄金",           "color": "#14b8a6"},
+    {"ticker": "MAGS", "name": "七巨头",         "color": "#3b82f6"},
+    {"ticker": "SOXX", "name": "半导体",         "color": "#9333ea"},
+    {"ticker": "ARKK", "name": "ARK创新",       "color": "#f472b6"},
+    {"ticker": "IWM",  "name": "小盘股",         "color": "#fbbf24"},
+    {"ticker": "IGV",  "name": "软件",          "color": "#a855f7"},
+    {"ticker": "DRAM", "name": "内存芯片",       "color": "#ec4899"},
+    {"ticker": "CIBR", "name": "网络安全",       "color": "#14b8a6"},
 ]
 
 SECTOR_HOLDINGS: Dict[str, List[Dict[str, str]]] = {

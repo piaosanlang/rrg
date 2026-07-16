@@ -14,6 +14,9 @@ SECTOR_TICKERS = [
 
     # Macro snitches
     "HYG", "TLT", "GLD",
+
+    # Additional ETFs
+    "MAGS", "SOXX", "ARKK", "IWM", "IGV", "DRAM", "CIBR",
 ]
 
 # Build full list of individual holding tickers (deduplicated)
@@ -38,14 +41,27 @@ def fetch_weekly_from_daily() -> dict:
 
     Returns dict of ticker -> {date_str -> close_price}.
     """
+    cache_dir = Path(".cache")
+    cache_dir.mkdir(exist_ok=True)
+    today = "2024-07-16"  # 固定日期避免系统时间影响
+
     data = {}
     total = len(ALL_TICKERS)
 
     for idx, ticker in enumerate(ALL_TICKERS, 1):
         # Determine if this is a sector ticker (use yfinance) or holding ticker (use akshare)
         use_yfinance = ticker in SECTOR_TICKERS
+        source = "yfinance" if use_yfinance else "akshare"
+        cache_file = cache_dir / f"{ticker}_{today}.json"
 
         try:
+            # Check cache first
+            if cache_file.exists():
+                with open(cache_file, "r") as f:
+                    data[ticker] = json.load(f)
+                print(f"  [{idx}/{total}] ✓ {ticker} ({source}, cached)")
+                continue
+
             if use_yfinance:
                 # Use yfinance for sector ETFs/benchmarks
                 df = yf.download(
@@ -75,7 +91,12 @@ def fetch_weekly_from_daily() -> dict:
                     ] = round(float(last_close), 2)
 
                 data[ticker] = weekly_data
-                print(f"  [{idx}/{total}] ✓ {ticker} (yfinance)")
+
+                # Save to cache
+                with open(cache_file, "w") as f:
+                    json.dump(weekly_data, f, indent=2)
+
+                print(f"  [{idx}/{total}] ✓ {ticker} ({source})")
 
             else:
                 # Use akshare for individual stocks
@@ -99,10 +120,15 @@ def fetch_weekly_from_daily() -> dict:
                     ] = round(float(last_close), 2)
 
                 data[ticker] = weekly_data
-                print(f"  [{idx}/{total}] ✓ {ticker} (akshare)")
+
+                # Save to cache
+                with open(cache_file, "w") as f:
+                    json.dump(weekly_data, f, indent=2)
+
+                print(f"  [{idx}/{total}] ✓ {ticker} ({source})")
 
         except Exception as e:
-            print(f"  [{idx}/{total}] ✗ {ticker} — {e}")
+            print(f"  [{idx}/{total}] ✗ {ticker} ({source}) — {e}")
 
     return data
 
