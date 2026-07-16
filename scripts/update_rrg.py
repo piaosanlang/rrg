@@ -1,11 +1,16 @@
+# -*- coding: utf-8 -*-
 import akshare as ak
 import json
 import pandas as pd
+import time
+import os
 from pathlib import Path
 from datetime import datetime
 from rrg_math import compute_rrg, SECTOR_HOLDINGS
 
-# ── Ticker universe ──────────────────────────────────────────────
+SCRIPT_DIR = Path(__file__).resolve().parent
+CACHE_DIR = SCRIPT_DIR / ".cache"
+PUBLIC_DIR = SCRIPT_DIR / "public"
 
 SECTOR_TICKERS = [
     "SPY", "XLK", "XLF", "XLV", "XLE",
@@ -30,7 +35,7 @@ ALL_TICKERS = list(set(SECTOR_TICKERS + HOLDING_TICKERS))
 
 # ── Data fetch ───────────────────────────────────────────────────
 
-def fetch_weekly_from_daily() -> dict:
+def fetch_weekly_from_daily():
     """
     Download daily price data for all tickers from 2024-01-01
     and aggregate to weekly closes (last trading day of each week).
@@ -39,16 +44,15 @@ def fetch_weekly_from_daily() -> dict:
 
     Returns dict of ticker -> {date_str -> close_price}.
     """
-    cache_dir = Path(".cache")
-    cache_dir.mkdir(exist_ok=True)
-    today = "2024-07-16"  # 固定日期避免系统时间影响
+    CACHE_DIR.mkdir(exist_ok=True)
+    today = "2024-07-16"
 
     data = {}
     total = len(ALL_TICKERS)
 
     for idx, ticker in enumerate(ALL_TICKERS, 1):
         source = "akshare"
-        cache_file = cache_dir / f"{ticker}_{today}_ak.json"
+        cache_file = CACHE_DIR / f"{ticker}_{today}_ak.json"
 
         try:
             if cache_file.exists():
@@ -57,6 +61,7 @@ def fetch_weekly_from_daily() -> dict:
                 print(f"  [{idx}/{total}] ✓ {ticker} ({source}, cached)")
                 continue
 
+            time.sleep(0.1)
             df = ak.stock_us_daily(symbol=ticker, adjust="")
 
             df = df.rename(columns={"date": "Date", "close": "Close"})
@@ -77,7 +82,6 @@ def fetch_weekly_from_daily() -> dict:
 
             data[ticker] = weekly_data
 
-            # Save to cache
             with open(cache_file, "w") as f:
                 json.dump(weekly_data, f, indent=2)
 
@@ -97,22 +101,19 @@ def main():
     print("=" * 50)
     raw_data = fetch_weekly_from_daily()
 
-    public_dir = Path("public")
-    public_dir.mkdir(exist_ok=True)
+    PUBLIC_DIR.mkdir(exist_ok=True)
 
-    # ── Main sector RRG ──────────────────────────────
     print("\nComputing main sector RRG...")
     rrg_data = compute_rrg(raw_data)
 
-    with open(public_dir / "raw-data.json", "w") as f:
+    with open(PUBLIC_DIR / "raw-data.json", "w") as f:
         json.dump(raw_data, f, indent=2)
-    print("  ✓ public/raw-data.json")
+    print(f"  ✓ {PUBLIC_DIR}/raw-data.json")
 
-    with open(public_dir / "rrg-data.json", "w") as f:
+    with open(PUBLIC_DIR / "rrg-data.json", "w") as f:
         json.dump(rrg_data, f, indent=2)
-    print("  ✓ public/rrg-data.json")
+    print(f"  ✓ {PUBLIC_DIR}/rrg-data.json")
 
-    # ── Drill-down RRGs ──────────────────────────────
     print("\nComputing drill-down RRGs...")
     success = 0
     failed = 0
@@ -125,7 +126,7 @@ def main():
                 sectors=holdings,
             )
 
-            filename = public_dir / f"rrg-{sector_ticker.lower()}.json"
+            filename = PUBLIC_DIR / f"rrg-{sector_ticker.lower()}.json"
             with open(filename, "w") as f:
                 json.dump(drilldown_data, f, indent=2)
 
@@ -136,7 +137,6 @@ def main():
             print(f"  ✗ {sector_ticker} drill-down failed — {e}")
             failed += 1
 
-    # ── Summary ──────────────────────────────────────
     print("\n" + "=" * 50)
     print(f"Done.")
     print(f"  Main RRG:       ✓")
