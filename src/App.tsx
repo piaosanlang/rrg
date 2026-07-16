@@ -541,14 +541,14 @@ export default function RRGChart() {
       minHeight: "100vh",
       fontFamily: "'Courier New', monospace",
       color: "#1a1a1a",
-      padding: "20px",
+      padding: "20px 16px",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
     }}>
 
       {/* ── Header ───────────────────────────────────────────── */}
-      <div style={{ width: "100%", maxWidth: 760, marginBottom: 14 }}>
+      <div style={{ width: "100%", maxWidth: 1800, marginBottom: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -631,207 +631,198 @@ export default function RRGChart() {
         )}
       </div>
 
-      {/* ── Chart canvas ─────────────────────────────────────── */}
-      <div style={{
-        position: "relative",
-        border: "1px solid rgba(0,0,0,0.15)",
-        borderRadius: 8,
-        overflow: "hidden",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-      }}>
-        {/* Loading overlay */}
-        {(!data || drilldownLoading) && (
+      {/* ── Chart canvas + Ticker sidebar ────────────────────── */}
+      <div style={{ width: "100%", maxWidth: 1800, display: "flex", gap: 12, alignItems: "flex-start" }}>
+
+        {/* Left: canvas + timeline */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+
+          {/* ── Chart canvas ─────────────────────────────────────── */}
           <div style={{
-            position: "absolute", inset: 0,
-            background: "rgba(255,255,255,0.95)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            zIndex: 10, fontSize: 13, color: "#0096c8", letterSpacing: "0.1em",
+            position: "relative",
+            border: "1px solid rgba(0,0,0,0.15)",
+            borderRadius: 8,
+            overflow: "hidden",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
           }}>
-            <span style={{ animation: "pulse 1s infinite" }}>
-              {drilldownLoading ? `LOADING ${activeSector} HOLDINGS...` : "LOADING RRG DATA..."}
-            </span>
-          </div>
-        )}
-
-        <canvas
-          ref={canvasRef}
-          style={{ display: "block", cursor: "crosshair" }}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={() => { setHovered(null); if (canvasRef.current) canvasRef.current.style.cursor = "crosshair"; }}
-          onClick={handleClick}
-        />
-      </div>
-
-      {/* ── Timeline scrubber ────────────────────────────────── */}
-      {data && (
-        <div style={{
-          width: "95%", maxWidth: 1600, marginTop: 12,
-          background: "rgba(255,255,255,0.6)",
-          border: "1px solid rgba(0,0,0,0.1)",
-          borderRadius: 6, padding: "12px 18px",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <button
-              onClick={() => { frameRef.current = 0; setAnimFrame(0); setPlaying(true); }}
-              disabled={playing}
-              style={{
-                background: playing ? "rgba(0,150,200,0.15)" : "rgba(0,150,200,0.25)",
-                border: "1px solid rgba(0,150,200,0.6)",
-                color: "#0096c8",
-                padding: "5px 16px", borderRadius: 4,
-                cursor: playing ? "default" : "pointer",
-                fontSize: 11, letterSpacing: "0.08em",
-                opacity: playing ? 0.5 : 1, whiteSpace: "nowrap",
-              }}
-            >
-              {playing ? "▶ PLAYING..." : "▶ ANIMATE"}
-            </button>
-
-            <div style={{ flex: 1 }}>
-              <input
-                type="range"
-                min={0}
-                max={totalFrames}
-                value={animFrame}
-                onChange={(e) => {
-                  const v = +e.target.value;
-                  setAnimFrame(v);
-                  frameRef.current = v;
-                  setPlaying(false);
-                }}
-                style={{ width: "100%", accentColor: "#0096c8", cursor: "pointer" }}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-                {data[0].trail.map((p: any, i: number) => (
-                  <span key={i} style={{
-                    fontSize: 8,
-                    color: i === animFrame ? "#0096c8" : "rgba(0,0,0,0.3)",
-                    fontWeight: i === animFrame ? "bold" : "normal",
-                    letterSpacing: "0.01em",
-                    transform: "rotate(-35deg)",
-                    transformOrigin: "top center",
-                    display: "block",
-                    marginTop: 4,
-                  }}>
-                    {p.date.slice(5)}
-                  </span>
-                ))}
+            {/* Loading overlay */}
+            {(!data || drilldownLoading) && (
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "rgba(255,255,255,0.95)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                zIndex: 10, fontSize: 13, color: "#0096c8", letterSpacing: "0.1em",
+              }}>
+                <span style={{ animation: "pulse 1s infinite" }}>
+                  {drilldownLoading ? `LOADING ${activeSector} HOLDINGS...` : "LOADING RRG DATA..."}
+                </span>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            )}
 
-      {/* ── Legend grid ──────────────────────────────────────── */}
-      {data && (
-        <div style={{ width: "95%", maxWidth: 1600, marginTop: 10 }}>
-          {/* 全选/清除按钮 */}
-          <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
-            <button
-              onClick={() => setSelected(data.map((_, i) => i))}
-              style={{
-                background: "rgba(0,150,200,0.15)",
-                border: "1px solid rgba(0,150,200,0.4)",
-                color: "#0096c8",
-                padding: "4px 12px",
-                borderRadius: 4,
-                cursor: "pointer",
-                fontSize: 10,
-                fontWeight: "bold",
-              }}
-            >
-              全选
-            </button>
-            <button
-              onClick={() => setSelected([])}
-              style={{
-                background: "rgba(0,0,0,0.05)",
-                border: "1px solid rgba(0,0,0,0.2)",
-                color: "rgba(0,0,0,0.6)",
-                padding: "4px 12px",
-                borderRadius: 4,
-                cursor: "pointer",
-                fontSize: 10,
-                fontWeight: "bold",
-              }}
-            >
-              清除
-            </button>
+            <canvas
+              ref={canvasRef}
+              style={{ display: "block", cursor: "crosshair" }}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={() => { setHovered(null); if (canvasRef.current) canvasRef.current.style.cursor = "crosshair"; }}
+              onClick={handleClick}
+            />
+          </div>
+
+          {/* ── Timeline scrubber ────────────────────────────────── */}
+          {data && (
             <div style={{
-              fontSize: 10,
-              color: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              marginLeft: 8,
+              marginTop: 12,
+              background: "rgba(255,255,255,0.6)",
+              border: "1px solid rgba(0,0,0,0.1)",
+              borderRadius: 6, padding: "12px 18px",
             }}>
-              已选择 {selected.length} / {data.length} 个标的
-            </div>
-          </div>
-
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill,minmax(138px,1fr))",
-            gap: 7,
-          }}>
-          {data.map((d: any, i: number) => {
-            const cur = d.trail[Math.min(animFrame, d.trail.length - 1)];
-            const q   = getQuadrant(cur.rs, cur.mom);
-            const active = selected.includes(i) || hovered === i;
-            const isChecked = selected.includes(i);
-
-            return (
-              <div
-                key={d.ticker}
-                onClick={() => {
-                  setSelected((prev) =>
-                    prev.includes(i) ? prev.filter(idx => idx !== i) : [...prev, i]
-                  );
-                }}
-                onMouseEnter={() => setHovered(i)}
-                onMouseLeave={() => setHovered(null)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  padding: "5px 10px", borderRadius: 4,
-                  background: active ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.02)",
-                  border: `1px solid ${active ? d.color + "66" : "rgba(0,0,0,0.1)"}`,
-                  cursor: "pointer", transition: "all 0.15s",
-                }}
-              >
-                {/* Checkbox */}
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={() => {}}
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <button
+                  onClick={() => { frameRef.current = 0; setAnimFrame(0); setPlaying(true); }}
+                  disabled={playing}
                   style={{
-                    width: 16,
-                    height: 16,
-                    cursor: "pointer",
-                    accentColor: d.color,
+                    background: playing ? "rgba(0,150,200,0.15)" : "rgba(0,150,200,0.25)",
+                    border: "1px solid rgba(0,150,200,0.6)",
+                    color: "#0096c8",
+                    padding: "5px 16px", borderRadius: 4,
+                    cursor: playing ? "default" : "pointer",
+                    fontSize: 11, letterSpacing: "0.08em",
+                    opacity: playing ? 0.5 : 1, whiteSpace: "nowrap",
                   }}
-                />
-                <div style={{
-                  width: 8, height: 8, borderRadius: "50%",
-                  background: d.color, flexShrink: 0,
-                }} />
-                <div style={{ flex: 1, textAlign: "left" }}>
-                  <div style={{ fontSize: 11, fontWeight: "bold", color: d.color, display: "flex", alignItems: "center", gap: 4, lineHeight: 1.2 }}>
-                    {d.ticker}
-                    <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(0,0,0,0.6)" }}>{d.name}</span>
-                  </div>
-                  <div style={{ fontSize: 9, color: QUADRANT_COLORS[q as keyof typeof QUADRANT_COLORS] + "cc", lineHeight: 1.2, marginTop: 2 }}>
-                    {q}
+                >
+                  {playing ? "▶ PLAYING..." : "▶ ANIMATE"}
+                </button>
+
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="range"
+                    min={0}
+                    max={totalFrames}
+                    value={animFrame}
+                    onChange={(e) => {
+                      const v = +e.target.value;
+                      setAnimFrame(v);
+                      frameRef.current = v;
+                      setPlaying(false);
+                    }}
+                    style={{ width: "100%", accentColor: "#0096c8", cursor: "pointer" }}
+                  />
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+                    {data[0].trail.map((p: any, i: number) => (
+                      <span key={i} style={{
+                        fontSize: 8,
+                        color: i === animFrame ? "#0096c8" : "rgba(0,0,0,0.3)",
+                        fontWeight: i === animFrame ? "bold" : "normal",
+                        letterSpacing: "0.01em",
+                        transform: "rotate(-35deg)",
+                        transformOrigin: "top center",
+                        display: "block",
+                        marginTop: 4,
+                      }}>
+                        {p.date.slice(5)}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          )}
+
+        </div>{/* end left column */}
+
+        {/* Right: ticker list */}
+        {data && (
+          <div style={{ width: 340, flexShrink: 0 }}>
+            {/* 全选/清除按钮 */}
+            <div style={{ marginBottom: 8, display: "flex", gap: 6 }}>
+              <button
+                onClick={() => setSelected(data.map((_: any, i: number) => i))}
+                style={{
+                  background: "rgba(0,150,200,0.15)",
+                  border: "1px solid rgba(0,150,200,0.4)",
+                  color: "#0096c8",
+                  padding: "4px 10px",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontSize: 10,
+                  fontWeight: "bold",
+                }}
+              >
+                全选
+              </button>
+              <button
+                onClick={() => setSelected([])}
+                style={{
+                  background: "rgba(0,0,0,0.05)",
+                  border: "1px solid rgba(0,0,0,0.2)",
+                  color: "rgba(0,0,0,0.6)",
+                  padding: "4px 10px",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontSize: 10,
+                  fontWeight: "bold",
+                }}
+              >
+                清除
+              </button>
+            </div>
+            <div style={{ fontSize: 9, color: "rgba(0,0,0,0.4)", marginBottom: 6 }}>
+              已选 {selected.length} / {data.length}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+            {data.map((d: any, i: number) => {
+              const cur = d.trail[Math.min(animFrame, d.trail.length - 1)];
+              const q   = getQuadrant(cur.rs, cur.mom);
+              const active = selected.includes(i) || hovered === i;
+              const isChecked = selected.includes(i);
+
+              return (
+                <div
+                  key={d.ticker}
+                  onClick={() => {
+                    setSelected((prev) =>
+                      prev.includes(i) ? prev.filter(idx => idx !== i) : [...prev, i]
+                    );
+                  }}
+                  onMouseEnter={() => setHovered(i)}
+                  onMouseLeave={() => setHovered(null)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "4px 8px", borderRadius: 4,
+                    background: active ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.02)",
+                    border: `1px solid ${active ? d.color + "66" : "rgba(0,0,0,0.1)"}`,
+                    cursor: "pointer", transition: "all 0.15s",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {}}
+                    style={{ width: 14, height: 14, cursor: "pointer", accentColor: d.color, flexShrink: 0 }}
+                  />
+                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
+                  <div style={{ flex: 1, textAlign: "left" }}>
+                    <div style={{ fontSize: 11, fontWeight: "bold", color: d.color, display: "flex", alignItems: "center", gap: 3, lineHeight: 1.2 }}>
+                      {d.ticker}
+                      <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(0,0,0,0.6)" }}>{d.name}</span>
+                    </div>
+                    <div style={{ fontSize: 9, color: QUADRANT_COLORS[q as keyof typeof QUADRANT_COLORS] + "cc", lineHeight: 1.2, marginTop: 1 }}>
+                      {q}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+      </div>{/* end canvas+sidebar row */}
 
       {/* ── Footer note ──────────────────────────────────────── */}
       <div style={{
-        width: "95%", maxWidth: 1600, marginTop: 12,
+        width: "100%", maxWidth: 1800, marginTop: 12,
         background: "rgba(255,255,255,0.6)",
         border: "1px solid rgba(0,0,0,0.1)",
         borderRadius: 6, padding: "12px 16px",
