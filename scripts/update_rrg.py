@@ -1,5 +1,4 @@
 import akshare as ak
-import yfinance as yf
 import json
 import pandas as pd
 from pathlib import Path
@@ -36,8 +35,7 @@ def fetch_weekly_from_daily() -> dict:
     Download daily price data for all tickers from 2024-01-01
     and aggregate to weekly closes (last trading day of each week).
 
-    Uses yfinance for SECTOR_TICKERS (ETFs/benchmarks) to avoid system time issues.
-    Uses akshare for HOLDING_TICKERS (individual stocks).
+    Uses akshare for all tickers.
 
     Returns dict of ticker -> {date_str -> close_price}.
     """
@@ -49,35 +47,24 @@ def fetch_weekly_from_daily() -> dict:
     total = len(ALL_TICKERS)
 
     for idx, ticker in enumerate(ALL_TICKERS, 1):
-        # Use yfinance for all tickers
-        source = "yfinance"
-        cache_file = cache_dir / f"{ticker}_{today}_yf.json"
+        source = "akshare"
+        cache_file = cache_dir / f"{ticker}_{today}_ak.json"
 
         try:
-            # Check cache first
             if cache_file.exists():
                 with open(cache_file, "r") as f:
                     data[ticker] = json.load(f)
                 print(f"  [{idx}/{total}] ✓ {ticker} ({source}, cached)")
                 continue
 
-            # Use yfinance for all tickers
-            df = yf.download(
-                ticker,
-                start="2024-01-01",
-                interval="1d",
-                auto_adjust=True,
-                progress=False,
-            )
+            df = ak.stock_us_daily(symbol=ticker, adjust="")
 
-            # Flatten multi-level columns if present
-            df.columns = [
-                col[0] if isinstance(col, tuple) else col
-                for col in df.columns
-            ]
+            df = df.rename(columns={"date": "Date", "close": "Close"})
+            df["Date"] = pd.to_datetime(df["Date"])
+            df = df[df["Date"] >= "2024-01-01"]
+            df = df.set_index("Date")
 
             df = df[["Close"]].dropna().copy()
-            df.index = pd.to_datetime(df.index)
             df["week"] = df.index.to_period("W-FRI")
 
             weekly_data = {}
