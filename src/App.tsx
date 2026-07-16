@@ -814,10 +814,11 @@ export default function RRGChart() {
                   background: d.color, flexShrink: 0,
                 }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: "bold", color: d.color }}>
+                  <div style={{ fontSize: 11, fontWeight: "bold", color: d.color, display: "flex", alignItems: "center", gap: 4, lineHeight: 1.2 }}>
                     {d.ticker}
+                    <span style={{ fontSize: 9, fontWeight: 400, color: "rgba(0,0,0,0.6)" }}>{d.name}</span>
                   </div>
-                  <div style={{ fontSize: 9, color: QUADRANT_COLORS[q as keyof typeof QUADRANT_COLORS] + "cc" }}>
+                  <div style={{ fontSize: 9, color: QUADRANT_COLORS[q as keyof typeof QUADRANT_COLORS] + "cc", lineHeight: 1.2, marginTop: 2 }}>
                     {q}
                   </div>
                 </div>
