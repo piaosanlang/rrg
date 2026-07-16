@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 from datetime import datetime
 from rrg_math import compute_rrg, SECTOR_HOLDINGS
+import yfinance as yf
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CACHE_DIR = SCRIPT_DIR / ".cache"
@@ -50,9 +52,10 @@ def fetch_weekly_from_daily():
     data = {}
     total = len(ALL_TICKERS)
 
+    source = "ak" # yahoo
     for idx, ticker in enumerate(ALL_TICKERS, 1):
-        source = "akshare"
-        cache_file = CACHE_DIR / f"{ticker}_{today}_ak.json"
+
+        cache_file = CACHE_DIR / f"{ticker}_{today}_{source}.json"
 
         try:
             if cache_file.exists():
@@ -61,16 +64,37 @@ def fetch_weekly_from_daily():
                 print(f"  [{idx}/{total}] ✓ {ticker} ({source}, cached)")
                 continue
 
-            time.sleep(0.1)
-            df = ak.stock_us_daily(symbol=ticker, adjust="")
+            if source == "ak":
+                time.sleep(0.1)
+                df = ak.stock_us_daily(symbol=ticker, adjust="qfq")
 
-            df = df.rename(columns={"date": "Date", "close": "Close"})
-            df["Date"] = pd.to_datetime(df["Date"])
-            df = df[df["Date"] >= "2024-01-01"]
-            df = df.set_index("Date")
+                df = df.rename(columns={"date": "Date", "close": "Close"})
+                df["Date"] = pd.to_datetime(df["Date"])
+                df = df[df["Date"] >= "2024-01-01"]
+                df = df.set_index("Date")
 
-            df = df[["Close"]].dropna().copy()
-            df["week"] = df.index.to_period("W-FRI")
+                df = df[["Close"]].dropna().copy()
+                df["week"] = df.index.to_period("W-FRI")
+
+            else:
+                # Use yfinance for all tickers
+                df = yf.download(
+                    ticker,
+                    start="2024-01-01",
+                    interval="1d",
+                    auto_adjust=True,
+                    progress=False,
+                )
+
+                # Flatten multi-level columns if present
+                df.columns = [
+                    col[0] if isinstance(col, tuple) else col
+                    for col in df.columns
+                ]
+
+                df = df[["Close"]].dropna().copy()
+                df.index = pd.to_datetime(df.index)
+                df["week"] = df.index.to_period("W-FRI")
 
             weekly_data = {}
             for _, group in df.groupby("week"):
