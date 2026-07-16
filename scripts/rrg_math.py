@@ -359,10 +359,59 @@ def compute_rrg(
     if sectors is None:
         sectors = SECTORS
 
-    universe = [benchmark] + [s["ticker"] for s in sectors]
-    date_sets = [set(raw_data.get(t, {}).keys()) for t in universe]
-    common_dates = sorted(date_sets[0].intersection(*date_sets[1:]))
+    # 最小数据点要求（至少需要 NORM_WINDOW + 一些额外点用于计算）
+    MIN_DATA_POINTS = 50
 
+    # 分离数据充足和不足的 ticker
+    sufficient_sectors = []
+    insufficient_sectors = []
+
+    for sec in sectors:
+        ticker_dates = raw_data.get(sec["ticker"], {})
+        if len(ticker_dates) >= MIN_DATA_POINTS:
+            sufficient_sectors.append(sec)
+        else:
+            insufficient_sectors.append(sec)
+
+    # 先计算数据充足的 ticker（使用完整的 common_dates）
+    results: List[Dict[str, Any]] = []
+
+    if sufficient_sectors:
+        universe = [benchmark] + [s["ticker"] for s in sufficient_sectors]
+        date_sets = [set(raw_data.get(t, {}).keys()) for t in universe]
+        common_dates = sorted(date_sets[0].intersection(*date_sets[1:]))
+
+        if common_dates:
+            results.extend(_compute_rrg_for_sectors(
+                raw_data, benchmark, sufficient_sectors, common_dates
+            ))
+
+    # 再计算数据不足的 ticker（使用它们各自的数据范围）
+    for sec in insufficient_sectors:
+        ticker = sec["ticker"]
+        # 使用 benchmark 和该 ticker 共有的日期
+        benchmark_dates = set(raw_data.get(benchmark, {}).keys())
+        ticker_dates = set(raw_data.get(ticker, {}).keys())
+        common_dates = sorted(benchmark_dates.intersection(ticker_dates))
+
+        if common_dates:
+            result = _compute_rrg_for_sectors(
+                raw_data, benchmark, [sec], common_dates
+            )
+            results.extend(result)
+
+    return results
+
+
+def _compute_rrg_for_sectors(
+    raw_data: Dict[str, Dict[str, float]],
+    benchmark: str,
+    sectors: List[Dict[str, str]],
+    common_dates: List[str],
+) -> List[Dict[str, Any]]:
+    """
+    Internal function to compute RRG for a list of sectors with given common dates.
+    """
     if not common_dates:
         return []
 

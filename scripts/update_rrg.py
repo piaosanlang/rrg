@@ -49,10 +49,9 @@ def fetch_weekly_from_daily() -> dict:
     total = len(ALL_TICKERS)
 
     for idx, ticker in enumerate(ALL_TICKERS, 1):
-        # Determine if this is a sector ticker (use yfinance) or holding ticker (use akshare)
-        use_yfinance = ticker in SECTOR_TICKERS
-        source = "yfinance" if use_yfinance else "akshare"
-        cache_file = cache_dir / f"{ticker}_{today}.json"
+        # Use yfinance for all tickers
+        source = "yfinance"
+        cache_file = cache_dir / f"{ticker}_{today}_yf.json"
 
         try:
             # Check cache first
@@ -62,70 +61,40 @@ def fetch_weekly_from_daily() -> dict:
                 print(f"  [{idx}/{total}] ✓ {ticker} ({source}, cached)")
                 continue
 
-            if use_yfinance:
-                # Use yfinance for sector ETFs/benchmarks
-                df = yf.download(
-                    ticker,
-                    start="2024-01-01",
-                    interval="1d",
-                    auto_adjust=True,
-                    progress=False,
-                )
+            # Use yfinance for all tickers
+            df = yf.download(
+                ticker,
+                start="2024-01-01",
+                interval="1d",
+                auto_adjust=True,
+                progress=False,
+            )
 
-                # Flatten multi-level columns if present
-                df.columns = [
-                    col[0] if isinstance(col, tuple) else col
-                    for col in df.columns
-                ]
+            # Flatten multi-level columns if present
+            df.columns = [
+                col[0] if isinstance(col, tuple) else col
+                for col in df.columns
+            ]
 
-                df = df[["Close"]].dropna().copy()
-                df.index = pd.to_datetime(df.index)
-                df["week"] = df.index.to_period("W-FRI")
+            df = df[["Close"]].dropna().copy()
+            df.index = pd.to_datetime(df.index)
+            df["week"] = df.index.to_period("W-FRI")
 
-                weekly_data = {}
-                for _, group in df.groupby("week"):
-                    last_trading_day = group.index.max()
-                    last_close = group["Close"].iloc[-1]
-                    weekly_data[
-                        last_trading_day.strftime("%Y-%m-%d")
-                    ] = round(float(last_close), 2)
+            weekly_data = {}
+            for _, group in df.groupby("week"):
+                last_trading_day = group.index.max()
+                last_close = group["Close"].iloc[-1]
+                weekly_data[
+                    last_trading_day.strftime("%Y-%m-%d")
+                ] = round(float(last_close), 2)
 
-                data[ticker] = weekly_data
+            data[ticker] = weekly_data
 
-                # Save to cache
-                with open(cache_file, "w") as f:
-                    json.dump(weekly_data, f, indent=2)
+            # Save to cache
+            with open(cache_file, "w") as f:
+                json.dump(weekly_data, f, indent=2)
 
-                print(f"  [{idx}/{total}] ✓ {ticker} ({source})")
-
-            else:
-                # Use akshare for individual stocks
-                df = ak.stock_us_daily(symbol=ticker, adjust="")
-
-                df["date"] = pd.to_datetime(df["date"])
-                df = df[df["date"] >= "2024-01-01"].copy()
-                df = df.set_index("date")
-                df = df.rename(columns={"close": "Close"})
-
-                df = df[["Close"]].dropna().copy()
-                df.index = pd.to_datetime(df.index)
-                df["week"] = df.index.to_period("W-FRI")
-
-                weekly_data = {}
-                for _, group in df.groupby("week"):
-                    last_trading_day = group.index.max()
-                    last_close = group["Close"].iloc[-1]
-                    weekly_data[
-                        last_trading_day.strftime("%Y-%m-%d")
-                    ] = round(float(last_close), 2)
-
-                data[ticker] = weekly_data
-
-                # Save to cache
-                with open(cache_file, "w") as f:
-                    json.dump(weekly_data, f, indent=2)
-
-                print(f"  [{idx}/{total}] ✓ {ticker} ({source})")
+            print(f"  [{idx}/{total}] ✓ {ticker} ({source})")
 
         except Exception as e:
             print(f"  [{idx}/{total}] ✗ {ticker} ({source}) — {e}")

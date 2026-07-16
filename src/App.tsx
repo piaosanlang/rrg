@@ -211,21 +211,21 @@ export default function RRGChart() {
     const { minRS, maxRS, minMom, maxMom } = axisRange;
 
     // Background
-    ctx.fillStyle = "#080c18";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, W, H);
 
     const cx = toX(100), cy = toY(100);
 
     // Quadrant fills
     [
-      { x: cx,       y: PAD.top, w: W - PAD.right - cx, h: cy - PAD.top,      c: "rgba(16,185,129,0.09)"  },
-      { x: cx,       y: cy,      w: W - PAD.right - cx, h: H - PAD.bottom - cy, c: "rgba(245,158,11,0.09)"  },
-      { x: PAD.left, y: cy,      w: cx - PAD.left,      h: H - PAD.bottom - cy, c: "rgba(244,63,94,0.09)"   },
-      { x: PAD.left, y: PAD.top, w: cx - PAD.left,      h: cy - PAD.top,      c: "rgba(139,92,246,0.09)"  },
+      { x: cx,       y: PAD.top, w: W - PAD.right - cx, h: cy - PAD.top,      c: "rgba(16,185,129,0.2)"  },
+      { x: cx,       y: cy,      w: W - PAD.right - cx, h: H - PAD.bottom - cy, c: "rgba(245,158,11,0.2)"  },
+      { x: PAD.left, y: cy,      w: cx - PAD.left,      h: H - PAD.bottom - cy, c: "rgba(244,63,94,0.2)"   },
+      { x: PAD.left, y: PAD.top, w: cx - PAD.left,      h: cy - PAD.top,      c: "rgba(139,92,246,0.2)"  },
     ].forEach((f) => { ctx.fillStyle = f.c; ctx.fillRect(f.x, f.y, f.w, f.h); });
 
     // Grid
-    ctx.strokeStyle = "rgba(255,255,255,0.04)";
+    ctx.strokeStyle = "rgba(0,0,0,0.1)";
     ctx.lineWidth = 1;
     for (let v = minRS; v <= maxRS; v++) {
       ctx.beginPath(); ctx.moveTo(toX(v), PAD.top); ctx.lineTo(toX(v), H - PAD.bottom); ctx.stroke();
@@ -235,7 +235,7 @@ export default function RRGChart() {
     }
 
     // Centre axes
-    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.strokeStyle = "rgba(0,0,0,0.4)";
     ctx.lineWidth = 1.5;
     ctx.setLineDash([5, 4]);
     ctx.beginPath(); ctx.moveTo(cx, PAD.top); ctx.lineTo(cx, H - PAD.bottom); ctx.stroke();
@@ -249,14 +249,14 @@ export default function RRGChart() {
       { t: "LAGGING",   x: PAD.left + 6,       y: H - PAD.bottom - 8, a: "left",  c: "#f43f5e" },
       { t: "IMPROVING", x: PAD.left + 6,       y: PAD.top + 16,      a: "left",  c: "#8b5cf6" },
     ].forEach((l) => {
-      ctx.fillStyle = l.c + "88";
+      ctx.fillStyle = l.c;
       ctx.font = "bold 10px 'Courier New', monospace";
       ctx.textAlign = l.a as CanvasTextAlign;
       ctx.fillText(l.t, l.x, l.y);
     });
 
     // Tick labels
-    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
     ctx.font = "10px 'Courier New', monospace";
     ctx.textAlign = "center";
     for (let v = minRS + 1; v < maxRS; v += 2) {
@@ -268,7 +268,7 @@ export default function RRGChart() {
     }
 
     // Axis titles
-    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
     ctx.font = "11px 'Courier New', monospace";
     ctx.textAlign = "center";
     ctx.fillText("JdK RS-Ratio →", PAD.left + CW / 2, H - 10);
@@ -280,7 +280,7 @@ export default function RRGChart() {
 
     // Current date
     const curDate = data[0]?.trail[Math.min(animFrame, data[0].trail.length - 1)]?.date || "";
-    ctx.fillStyle = "rgba(0,212,255,0.7)";
+    ctx.fillStyle = "rgba(0,150,200,0.8)";
     ctx.font = "bold 11px 'Courier New', monospace";
     ctx.textAlign = "right";
     ctx.fillText(`▸ ${curDate}`, W - PAD.right, PAD.top - 16);
@@ -330,10 +330,10 @@ export default function RRGChart() {
 
       ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fillStyle = d.color; ctx.fill();
-      ctx.strokeStyle = "#080c18"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.stroke();
 
       // Ticker label
-      ctx.fillStyle = isActive ? "#ffffff" : "rgba(255,255,255,0.8)";
+      ctx.fillStyle = isActive ? "#000000" : "rgba(0,0,0,0.7)";
       ctx.font = `${isActive ? "bold " : ""}10px 'Courier New', monospace`;
       ctx.textAlign = "center";
       ctx.fillText(d.ticker, x, y - r - 5);
@@ -369,7 +369,7 @@ export default function RRGChart() {
       const by = Math.max(Math.min(y - 14, H - bh - 10), PAD.top);
 
       // Tooltip background
-      ctx.fillStyle = "rgba(8,12,24,0.97)";
+      ctx.fillStyle = "rgba(255,255,255,0.98)";
       ctx.strokeStyle = d.color;
       ctx.lineWidth = 1.5;
       roundRect(ctx, bx, by, bw, bh, 6);
@@ -383,7 +383,7 @@ export default function RRGChart() {
       ctx.fillText(`${d.ticker}  ${d.name}`, bx + 10, by + 18);
 
       // RS values
-      ctx.fillStyle = "rgba(255,255,255,0.62)";
+      ctx.fillStyle = "rgba(0,0,0,0.65)";
       ctx.font = "10px 'Courier New', monospace";
       ctx.fillText(`RS-Ratio:    ${cur.rs.toFixed(2)}`,  bx + 10, by + 35);
       ctx.fillText(`RS-Momentum: ${cur.mom.toFixed(2)}`, bx + 10, by + 50);
@@ -397,7 +397,7 @@ export default function RRGChart() {
       let nextY = by + 67;
       if (dirText) {
         nextY += 18;
-        ctx.fillStyle = "rgba(255,255,255,0.42)";
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.font = "10px 'Courier New', monospace";
         ctx.fillText(dirText, bx + 10, nextY);
       }
@@ -405,7 +405,7 @@ export default function RRGChart() {
       // Drill-down link — only when pinned in sector view
       if (showDrilldownLink) {
         nextY += 20;
-        ctx.fillStyle = "rgba(0,212,255,0.75)";
+        ctx.fillStyle = "rgba(0,150,200,0.8)";
         ctx.font = "10px 'Courier New', monospace";
         ctx.fillText(`→ View ${d.ticker} Holdings`, bx + 10, nextY);
       }
@@ -523,10 +523,10 @@ export default function RRGChart() {
   // ── Render ────────────────────────────────────────────────────
   return (
     <div style={{
-      background: "#080c18",
+      background: "#f5f5f5",
       minHeight: "100vh",
       fontFamily: "'Courier New', monospace",
-      color: "#e2e8f0",
+      color: "#1a1a1a",
       padding: "20px",
       display: "flex",
       flexDirection: "column",
@@ -544,8 +544,8 @@ export default function RRGChart() {
                 onClick={handleBack}
                 style={{
                   background: "transparent",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  color: "rgba(255,255,255,0.6)",
+                  border: "1px solid rgba(0,0,0,0.2)",
+                  color: "rgba(0,0,0,0.6)",
                   padding: "5px 12px",
                   borderRadius: 4,
                   cursor: "pointer",
@@ -555,12 +555,12 @@ export default function RRGChart() {
                   transition: "all 0.15s",
                 }}
                 onMouseEnter={(e) => {
-                  (e.target as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.5)";
-                  (e.target as HTMLButtonElement).style.color = "#ffffff";
+                  (e.target as HTMLButtonElement).style.borderColor = "rgba(0,0,0,0.5)";
+                  (e.target as HTMLButtonElement).style.color = "#000000";
                 }}
                 onMouseLeave={(e) => {
-                  (e.target as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.2)";
-                  (e.target as HTMLButtonElement).style.color = "rgba(255,255,255,0.6)";
+                  (e.target as HTMLButtonElement).style.borderColor = "rgba(0,0,0,0.2)";
+                  (e.target as HTMLButtonElement).style.color = "rgba(0,0,0,0.6)";
                 }}
               >
                 ← BACK
@@ -572,13 +572,13 @@ export default function RRGChart() {
                 fontSize: 22,
                 fontWeight: "bold",
                 letterSpacing: "0.1em",
-                color: "#00d4ff",
+                color: "#0096c8",
               }}>
                 ◈ {chartTitle}
               </div>
               <div style={{
                 fontSize: 11,
-                color: "rgba(255,255,255,0.38)",
+                color: "rgba(0,0,0,0.5)",
                 marginTop: 4,
                 letterSpacing: "0.05em",
               }}>
@@ -588,10 +588,10 @@ export default function RRGChart() {
           </div>
 
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 10, color: "rgba(0,212,255,0.5)", marginBottom: 4 }}>
+            <div style={{ fontSize: 10, color: "rgba(0,150,200,0.7)", marginBottom: 4 }}>
               LAST UPDATE
             </div>
-            <div style={{ fontSize: 12, color: "#00d4ff", fontWeight: "bold" }}>
+            <div style={{ fontSize: 12, color: "#0096c8", fontWeight: "bold" }}>
               {frameDate}
             </div>
           </div>
@@ -620,18 +620,18 @@ export default function RRGChart() {
       {/* ── Chart canvas ─────────────────────────────────────── */}
       <div style={{
         position: "relative",
-        border: "1px solid rgba(255,255,255,0.1)",
+        border: "1px solid rgba(0,0,0,0.15)",
         borderRadius: 8,
         overflow: "hidden",
-        boxShadow: "0 0 40px rgba(0,212,255,0.05)",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
       }}>
         {/* Loading overlay */}
         {(!data || drilldownLoading) && (
           <div style={{
             position: "absolute", inset: 0,
-            background: "rgba(8,12,24,0.92)",
+            background: "rgba(255,255,255,0.95)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            zIndex: 10, fontSize: 13, color: "#00d4ff", letterSpacing: "0.1em",
+            zIndex: 10, fontSize: 13, color: "#0096c8", letterSpacing: "0.1em",
           }}>
             <span style={{ animation: "pulse 1s infinite" }}>
               {drilldownLoading ? `LOADING ${activeSector} HOLDINGS...` : "LOADING RRG DATA..."}
@@ -651,9 +651,9 @@ export default function RRGChart() {
       {/* ── Timeline scrubber ────────────────────────────────── */}
       {data && (
         <div style={{
-          width: "100%", maxWidth: 700, marginTop: 12,
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          width: "95%", maxWidth: 1600, marginTop: 12,
+          background: "rgba(255,255,255,0.6)",
+          border: "1px solid rgba(0,0,0,0.1)",
           borderRadius: 6, padding: "12px 18px",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -661,9 +661,9 @@ export default function RRGChart() {
               onClick={() => { frameRef.current = 0; setAnimFrame(0); setPlaying(true); }}
               disabled={playing}
               style={{
-                background: playing ? "rgba(0,212,255,0.08)" : "rgba(0,212,255,0.18)",
-                border: "1px solid rgba(0,212,255,0.5)",
-                color: "#00d4ff",
+                background: playing ? "rgba(0,150,200,0.15)" : "rgba(0,150,200,0.25)",
+                border: "1px solid rgba(0,150,200,0.6)",
+                color: "#0096c8",
                 padding: "5px 16px", borderRadius: 4,
                 cursor: playing ? "default" : "pointer",
                 fontSize: 11, letterSpacing: "0.08em",
@@ -685,13 +685,13 @@ export default function RRGChart() {
                   frameRef.current = v;
                   setPlaying(false);
                 }}
-                style={{ width: "100%", accentColor: "#00d4ff", cursor: "pointer" }}
+                style={{ width: "100%", accentColor: "#0096c8", cursor: "pointer" }}
               />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
                 {data[0].trail.map((p: any, i: number) => (
                   <span key={i} style={{
                     fontSize: 8,
-                    color: i === animFrame ? "#00d4ff" : "rgba(255,255,255,0.2)",
+                    color: i === animFrame ? "#0096c8" : "rgba(0,0,0,0.3)",
                     fontWeight: i === animFrame ? "bold" : "normal",
                     letterSpacing: "0.01em",
                     transform: "rotate(-35deg)",
@@ -730,8 +730,8 @@ export default function RRGChart() {
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "5px 10px", borderRadius: 4,
-                  background: active ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.02)",
-                  border: `1px solid ${active ? d.color + "66" : "rgba(255,255,255,0.07)"}`,
+                  background: active ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.02)",
+                  border: `1px solid ${active ? d.color + "66" : "rgba(0,0,0,0.1)"}`,
                   cursor: "pointer", transition: "all 0.15s",
                 }}
               >
@@ -755,23 +755,23 @@ export default function RRGChart() {
 
       {/* ── Footer note ──────────────────────────────────────── */}
       <div style={{
-        width: "100%", maxWidth: 700, marginTop: 12,
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.07)",
+        width: "95%", maxWidth: 1600, marginTop: 12,
+        background: "rgba(255,255,255,0.6)",
+        border: "1px solid rgba(0,0,0,0.1)",
         borderRadius: 6, padding: "12px 16px",
-        fontSize: 11, color: "rgba(255,255,255,0.32)", lineHeight: 1.9,
+        fontSize: 11, color: "rgba(0,0,0,0.6)", lineHeight: 1.9,
       }}>
-        <span style={{ color: "rgba(0,212,255,0.6)", fontWeight: "bold" }}>WEEKLY DATA · </span>
+        <span style={{ color: "rgba(0,150,200,0.8)", fontWeight: "bold" }}>WEEKLY DATA · </span>
         Python-computed JdK-style approximation using Yahoo Finance daily closes aggregated into weekly closes.
         Tail = dynamic current week + last completed weeks ·{" "}
-        <strong style={{ color: "rgba(255,255,255,0.45)" }}>dim→bright = old→recent</strong> ·
+        <strong style={{ color: "rgba(0,0,0,0.7)" }}>dim→bright = old→recent</strong> ·
         arrowhead = direction of travel.{" "}
         <span style={{ color: "#10b981" }}>Leading</span> + arrow ↙ = rotating toward Weakening.{" "}
         <span style={{ color: "#8b5cf6" }}>Improving</span> + arrow ↗ = rotating toward Leading.
-        Drag slider or hit <span style={{ color: "#00d4ff" }}>▶ ANIMATE</span> to replay.
+        Drag slider or hit <span style={{ color: "#0096c8" }}>▶ ANIMATE</span> to replay.
         {view === "sectors" && (
-          <span style={{ color: "rgba(255,255,255,0.22)" }}>
-            {" "}· Click a dot to pin tooltip · Click <span style={{ color: "rgba(0,212,255,0.5)" }}>→ View Holdings</span> to drill down into sector.
+          <span style={{ color: "rgba(0,0,0,0.4)" }}>
+            {" "}· Click a dot to pin tooltip · Click <span style={{ color: "rgba(0,150,200,0.7)" }}>→ View Holdings</span> to drill down into sector.
           </span>
         )}
       </div>
