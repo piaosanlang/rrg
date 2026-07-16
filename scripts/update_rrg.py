@@ -12,7 +12,7 @@ import yfinance as yf
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 CACHE_DIR = SCRIPT_DIR / ".cache"
-PUBLIC_DIR = SCRIPT_DIR / "public"
+PUBLIC_DIR = SCRIPT_DIR.parent / "public"
 
 SECTOR_TICKERS = [
     "SPY", "XLK", "XLF", "XLV", "XLE",
