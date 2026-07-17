@@ -53,12 +53,47 @@ def fetch_weekly_from_daily():
     total = len(ALL_TICKERS)
 
     source = "ak" # yahoo
+
+    need_refresh = False
+    for idx, ticker in enumerate(ALL_TICKERS[:3], 1):
+        cache_file = CACHE_DIR / f"{ticker}_{today}_{source}.json"
+        if cache_file.exists():
+            with open(cache_file, "r") as f:
+                old_data = json.load(f)
+
+            time.sleep(0.1)
+            if source == "ak":
+                df_check = ak.stock_us_daily(symbol=ticker, adjust="qfq")
+                df_check = df_check.rename(columns={"date": "Date", "close": "Close"})
+                df_check["Date"] = pd.to_datetime(df_check["Date"])
+                df_check = df_check[df_check["Date"] >= "2024-01-01"]
+                df_check = df_check.set_index("Date")
+                df_check = df_check[["Close"]].dropna().copy()
+                df_check["week"] = df_check.index.to_period("W-FRI")
+            else:
+                df_check = yf.download(ticker, start="2024-01-01", interval="1d", auto_adjust=True, progress=False)
+                df_check.columns = [col[0] if isinstance(col, tuple) else col for col in df_check.columns]
+                df_check = df_check[["Close"]].dropna().copy()
+                df_check.index = pd.to_datetime(df_check.index)
+                df_check["week"] = df_check.index.to_period("W-FRI")
+
+            check_data = {}
+            for _, group in df_check.groupby("week"):
+                last_trading_day = group.index.max()
+                last_close = group["Close"].iloc[-1]
+                check_data[last_trading_day.strftime("%Y-%m-%d")] = round(float(last_close), 2)
+
+            if check_data != old_data:
+                need_refresh = True
+                print(f"  前3个标的中检测到 {ticker} 数据变更，刷新所有缓存")
+                break
+
     for idx, ticker in enumerate(ALL_TICKERS, 1):
 
         cache_file = CACHE_DIR / f"{ticker}_{today}_{source}.json"
 
         try:
-            if cache_file.exists():
+            if cache_file.exists() and not need_refresh:
                 with open(cache_file, "r") as f:
                     data[ticker] = json.load(f)
                 print(f"  [{idx}/{total}] ✓ {ticker} ({source}, cached)")
