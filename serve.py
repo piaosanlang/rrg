@@ -18,7 +18,7 @@ import os
 from pathlib import Path
 
 # 默认端口
-DEFAULT_PORT = 8000
+DEFAULT_PORT = 8001
 
 # 静态文件目录
 STATIC_DIR = Path(__file__).parent / "dist"
