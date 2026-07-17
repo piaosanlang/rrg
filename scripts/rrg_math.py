@@ -22,7 +22,7 @@ SECTORS = [
     {"ticker": "XLRE", "name": "房地产",         "color": "#f43f5e"},
     {"ticker": "XLB",  "name": "材料",           "color": "#a78bfa"},
     {"ticker": "XLC",  "name": "通信服务",        "color": "#fb923c"},
-    {"ticker": "HYG",  "name": "企业债",         "color": "#22c55e"},
+    {"ticker": "RSP",  "name": "标普等权",        "color": "#22c55e"},
     {"ticker": "TLT",  "name": "国债",           "color": "#eab308"},
     {"ticker": "GLD",  "name": "黄金",           "color": "#14b8a6"},
     {"ticker": "MAGS", "name": "七巨头",         "color": "#3b82f6"},

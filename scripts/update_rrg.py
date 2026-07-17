@@ -19,7 +19,7 @@ SECTOR_TICKERS = [
     "XLI", "XLY", "XLP", "XLU", "XLRE", "XLB", "XLC",
 
     # Macro snitches
-    "HYG", "TLT", "GLD",
+    "RSP", "TLT", "GLD",
 
     # Additional ETFs
     "MAGS", "SOXX", "ARKK", "IWM", "IGV", "DRAM", "CIBR",
